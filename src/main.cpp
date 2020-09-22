@@ -3141,14 +3141,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         LogPrintf("block %d has %d recipients\n", pindex->nHeight, stakeRecipientSize);
         if (stakeRecipientSize == 1) {
             LogPrintf("  - block has incorrect masternode payment.\n");
-            if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT)
+            if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(4, pindexPrev, Params().EnforceBlockUpgradeMajority()))
                 return false;
         } else {
             auto mnOut = block.vtx[1].vout[stakeRecipientSize].nValue;
             auto mnExp = GetMasternodePayment(pindex->nHeight, nExpectedMint, 0);
             if (mnExp - mnOut > 100) {
                 LogPrintf("  - masternode hasnt received a reward (expected %llu, found %llu)\n", mnExp, mnOut);
-                if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT)
+                if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(5, pindexPrev, Params().EnforceBlockUpgradeMajority()))
                     return false;
             } else {
                 LogPrintf("  - masternode has received a reward (expected %llu, found %llu)\n", mnExp, mnOut);
@@ -4351,6 +4351,12 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
     // Reject block.nVersion=2 blocks when 95% (75% on testnet) of the network has upgraded:
     if (block.nVersion < 3 && CBlockIndex::IsSuperMajority(3, pindexPrev, Params().RejectBlockOutdatedMajority())) {
+        return state.Invalid(error("%s : rejected nVersion=2 block", __func__),
+            REJECT_OBSOLETE, "bad-version");
+    }
+
+    // Reject block.nVersion=4 blocks when 95% (75% on testnet) of the network has upgraded:
+    if (block.nVersion < 5 && CBlockIndex::IsSuperMajority(5, pindexPrev, Params().RejectBlockOutdatedMajority())) {
         return state.Invalid(error("%s : rejected nVersion=2 block", __func__),
             REJECT_OBSOLETE, "bad-version");
     }
