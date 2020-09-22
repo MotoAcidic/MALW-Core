@@ -3141,14 +3141,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         LogPrintf("block %d has %d recipients\n", pindex->nHeight, stakeRecipientSize);
         if (stakeRecipientSize == 1) {
             LogPrintf("  - block has incorrect masternode payment.\n");
-            if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(4, pindexPrev, Params().EnforceBlockUpgradeMajority()))
+            //chainActive.Tip()
+            if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(5, pindex->pprev, Params().EnforceBlockUpgradeMajority()))
                 return false;
         } else {
             auto mnOut = block.vtx[1].vout[stakeRecipientSize].nValue;
             auto mnExp = GetMasternodePayment(pindex->nHeight, nExpectedMint, 0);
             if (mnExp - mnOut > 100) {
                 LogPrintf("  - masternode hasnt received a reward (expected %llu, found %llu)\n", mnExp, mnOut);
-                if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(5, pindexPrev, Params().EnforceBlockUpgradeMajority()))
+                if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(5, pindex->pprev, Params().EnforceBlockUpgradeMajority()))
                     return false;
             } else {
                 LogPrintf("  - masternode has received a reward (expected %llu, found %llu)\n", mnExp, mnOut);
