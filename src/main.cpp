@@ -3134,22 +3134,20 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 FormatMoney(pindex->nMint), FormatMoney(nExpectedMint)), REJECT_INVALID, "bad-cb-amount");
     }
 
-    //Check that both stakers and mn get paid
-    if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT) {
-        bool expectedStake = block.nNonce == 0;
-        unsigned int stakeRecipientSize = block.vtx[expectedStake].vout.size() - (int)expectedStake;
+    if (IsSporkActive(SPORK_20_BLOCK_ENFORCEMENT_DEFAULT) && ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT) {
+        bool properStake = block.nNonce == 0;
+        unsigned int stakeRecipientSize = block.vtx[properStake].vout.size() - (int)properStake;
         LogPrintf("block %d has %d recipients\n", pindex->nHeight, stakeRecipientSize);
         if (stakeRecipientSize == 1) {
             LogPrintf("  - block has incorrect masternode payment.\n");
-            //chainActive.Tip()
-            if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(5, pindex->pprev, Params().EnforceBlockUpgradeMajority()))
+            if (IsSporkActive(SPORK_20_BLOCK_ENFORCEMENT_DEFAULT) && ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT)
                 return false;
         } else {
             auto mnOut = block.vtx[1].vout[stakeRecipientSize].nValue;
             auto mnExp = GetMasternodePayment(pindex->nHeight, nExpectedMint, 0);
             if (mnExp - mnOut > 100) {
                 LogPrintf("  - masternode hasnt received a reward (expected %llu, found %llu)\n", mnExp, mnOut);
-                if (ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT && CBlockIndex::IsSuperMajority(5, pindex->pprev, Params().EnforceBlockUpgradeMajority()))
+                if (IsSporkActive(SPORK_20_BLOCK_ENFORCEMENT_DEFAULT) && ActiveProtocol() >= BLOCK_RECIPIENT_ENFORCEMENT)
                     return false;
             } else {
                 LogPrintf("  - masternode has received a reward (expected %llu, found %llu)\n", mnExp, mnOut);
